@@ -1,8 +1,9 @@
 import { Modal } from "react-bootstrap";
 import AddProductForm from "../FormComponents/AddProductForm";
+import PurchseForm from "../FormComponents/PurchseForm";
 
 const ModalComponent = (props) => {
-  let { onClose, onButtonClick, isProduct } = props;
+  let { onClose, onButtonClick, isProduct, isPurchase } = props;
 
   const handleCloseModal = () => {
     onClose();
@@ -11,7 +12,7 @@ const ModalComponent = (props) => {
     onButtonClick();
   };
 
-  const renderUser = () => {
+  const renderProduct = () => {
     return (
       <>
         <Modal show={true} onHide={handleCloseModal}>
@@ -20,9 +21,22 @@ const ModalComponent = (props) => {
       </>
     );
   };
+  
+  const renderPurchase = () => {
+    return (
+      <>
+        <Modal show={true} onHide={handleCloseModal}>
+          <PurchseForm handleButtonClick={handleButtonClick} />
+        </Modal>
+      </>
+    );
+  };
 
   const renderMain = () => {
-    return <>{isProduct && renderUser()}</>;
+    return <>
+    {isProduct && renderProduct()}
+    {isPurchase && renderPurchase()}
+    </>;
   };
   return renderMain();
 };

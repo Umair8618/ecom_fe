@@ -1,33 +1,39 @@
-// AddProductForm
-import { useState } from "react";
-import { Modal, Button, Form } from "react-bootstrap";
+import React, { useState } from "react";
+import { Modal, Button } from "react-bootstrap";
+
+import Form from "react-bootstrap/Form";
 import { ENDPOINTS } from "../../Axios/EndPoints";
 import { Post } from "../../Axios/Post";
 
-const AddProductForm = (props) => {
-  let { handleButtonClick } = props;
+const EditProductModal = (props) => {
+  const { record, onClose } = props;
 
-  const [productName, setProductName] = useState("");
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [category, setCategory] = useState("");
+  const [productName, setProductName] = useState(record?.name || "");
+  const [description, setDescription] = useState(record?.description || "");
+  const [price, setPrice] = useState(record?.price || "");
+  const [category, setCategory] = useState(record?.category || "");
 
-
-  const handleSubmit = (e) => {
+  const handleEditProduct = (e) => {
     e.preventDefault();
-
     const formData = {
-      name: productName,
-      description: description,
-      price: price.toString(),
-      category: category,
+        name: productName,
+        description: description,
+        price: price.toString(),
+        category: category,
     }
 
-    Post(`${ENDPOINTS.CREATE_PRODUCT}`, JSON.stringify(formData), false, "", "")
+    Post(
+      `${ENDPOINTS.UPDATE_PRODUCTS}/${record?.uuid}`,
+      JSON.stringify(formData),
+      false,
+      "",
+      ""
+    )
       .then((res) => {
         if (res?.data?.success) {
-          alert("product added successfully");
-          handleButtonClick();
+          alert(res?.data?.message);
+          window.location.reload();
+          onClose();
           setProductName("");
           setDescription("");
           setPrice("");
@@ -35,19 +41,21 @@ const AddProductForm = (props) => {
         }
       })
       .catch((error) => {
-        alert("Error while adding Product", error);
+        alert("Error while editing product", error);
       });
   };
-  
   return (
     <>
-      {" "}
-      <Modal.Header closeButton>
-        <Modal.Title>Add Product</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-      <Form className="d-flex flex-column gap-3" onSubmit={handleSubmit}>
-          <Form.Group controlId="productName">
+      <Modal show={true} onHide={onClose}>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Product</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form
+            className="d-flex flex-column gap-3"
+            onSubmit={handleEditProduct}
+          >
+            <Form.Group controlId="productName">
             <Form.Label>Product Name</Form.Label>
             <Form.Control
               type="text"
@@ -92,12 +100,15 @@ const AddProductForm = (props) => {
           </Form.Group>
 
           <Button type="submit" variant="primary" className="w-100">
-            ADD PRODUCT
+            EDIT PRODUCT
           </Button>
-        </Form>
-      </Modal.Body>
+
+           
+          </Form>
+        </Modal.Body>
+      </Modal>
     </>
   );
 };
 
-export default AddProductForm;
+export default EditProductModal;

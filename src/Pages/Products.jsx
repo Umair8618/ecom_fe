@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Table } from "antd";
 import { Button, Form, InputGroup } from "react-bootstrap";
 
@@ -8,8 +8,14 @@ import {
   AiOutlineSearch,
 } from "react-icons/ai";
 import ModalComponent from "../Components/ModalComponent/ModalComponent";
+import EditProductModal from "../Components/ModalComponent/EditProductModal";
+import { ENDPOINTS } from "../Axios/EndPoints";
+import { Get } from "../Axios/Get";
+import DeleteProductModal from "../Components/ModalComponent/DeleteProductModal";
 
 const Products = () => {
+  const [allProducts, setAllProducts] = useState([]);
+
   const [showModal, setShowModal] = useState(false);
   const [isProduct, setIsProduct] = useState(false);
   const [record, setRecord] = useState({});
@@ -17,30 +23,30 @@ const Products = () => {
   const [deleteProductModal, setDeleteProductModal] = useState(false);
   const [page, setPage] = useState(1);
 
-  // const fetchProducts = () => {
-  //     Get(SETTINGS_ENDPOINTS.ALL_SETTINGS, true, token)
-  //       .then((res) => {
-  //         if (res?.data?.success) {
-  //           setAllSetting(res?.data?.data);
-  //         } else {
-  //           console.error("Setting Api Fetched But Success Is False");
-  //         }
-  //       })
-  //       .catch((error) => {
-  //         console.log("error while fetching all settings ");
-  //       });
-  //   };
+  const fetchProducts = () => {
+    Get(ENDPOINTS.ALL_PRODUCTS, false, "")
+      .then((res) => {
+        if (res?.data?.success) {
+          setAllProducts(res?.data?.products);
+        } else {
+          console.error("Products Api Fetched But Success Is False");
+        }
+      })
+      .catch((error) => {
+        console.log("error while fetching all products ");
+      });
+  };
 
-  //   useEffect(() => {
-  //     fetchSettings();
-
-  //     // eslint-disable-next-line react-hooks/exhaustive-deps
-  //   }, []);
+  useEffect(() => {
+    fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleOpenModal = () => {
     setShowModal(true);
     setIsProduct(true);
   };
+  
   const handleCloseModal = () => {
     setShowModal(false);
     setIsProduct(false);
@@ -59,7 +65,7 @@ const Products = () => {
       title: "#",
       key: "index",
       width: 50,
-      //   render: (value, item, index) => (page - 1) * 10 + (index + 1),
+      render: (value, item, index) => (page - 1) * 10 + (index + 1),
     },
     {
       title: "Id",
@@ -132,18 +138,20 @@ const Products = () => {
             <InputGroup>
               <Form.Control
                 type="search"
-                placeholder="Search"
-                //   onChange={(e) => {
-                //     const currValue = e.target.value;
-                //     const filteredData = allSettings.filter((entry) =>
-                //       entry.setting_key.includes(currValue)
-                //     );
-                //     if (currValue === "") {
-                //       fetchSettings();
-                //     } else {
-                //       setAllSetting(filteredData);
-                //     }
-                //   }}
+                placeholder="Search by name or category"
+                onChange={(e) => {
+                  const currValue = e.target.value.toLowerCase();
+                  const filteredData = allProducts?.filter(
+                    (entry) =>
+                      entry?.name?.toLowerCase().includes(currValue) ||
+                      entry?.category?.toLowerCase().includes(currValue)
+                  );
+                  if (currValue === "") {
+                    fetchProducts();
+                  } else {
+                    setAllProducts(filteredData);
+                  }
+                }}
               />
               <InputGroup.Text>
                 <AiOutlineSearch />
@@ -159,6 +167,23 @@ const Products = () => {
           Add Product
         </Button>
       </div>
+      <div className="mt-3 w-100 h-100">
+        <Table
+          // rowSelection={rowSelection}
+          pagination={{
+            onChange(current) {
+              setPage(current);
+            },
+          }}
+          columns={productDataColumns}
+          dataSource={allProducts}
+          scroll={{
+            x: "100%",
+            y: "90vh",
+          }}
+          bordered
+        />
+      </div>
       {showModal && (
         <ModalComponent
           onClose={handleCloseModal}
@@ -166,20 +191,20 @@ const Products = () => {
           isProduct={isProduct}
         />
       )}
-      {/* {editSettingModal && (
-          <EditSettingModal
-            onClose={handleCloseModal}
-            onButtonClick={handleButtonClick}
-            record={record}
-          />
-        )}
-        {deleteSettingModal && (
-          <DeleteSettingModal
-            onClose={handleCloseModal}
-            onButtonClick={handleButtonClick}
-            record={record}
-          />
-        )} */}
+      {editProductModal && (
+        <EditProductModal
+          onClose={handleCloseModal}
+          onButtonClick={handleButtonClick}
+          record={record}
+        />
+      )}
+      {deleteProductModal && (
+        <DeleteProductModal
+          onClose={handleCloseModal}
+          onButtonClick={handleButtonClick}
+          record={record}
+        />
+      )}
     </div>
   );
 };

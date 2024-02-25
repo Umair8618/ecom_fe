@@ -1,51 +1,92 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ToastContainer, toast } from "react-toastify";
 import { Form, Button } from "react-bootstrap";
+import ModalComponent from "../Components/ModalComponent/ModalComponent";
+import { useSelector, useDispatch } from 'react-redux';
+import { removeFromCart, clearCart } from '../Redux/actions/cartActions';
 
+import { setProducts } from '../Redux/actions/productActions';
+import { Get } from "../Axios/Get";
+import { ENDPOINTS } from "../Axios/EndPoints";
 
-const Purchase = (props) => {
-  const { cartItems, removeFromCart } = props;
+const Purchase = () => {
+  const dispatch = useDispatch();
+  const cartItems = useSelector(state => state.cart);
+
+  console.log("cartItems >>>", cartItems)
+
   const [customerInfo, setCustomerInfo] = useState({
     name: "",
     email: "",
     address: "",
   });
 
+  const [showModal, setShowModal] = useState(false);
+  const [isPurchase, setIsPurchase] = useState(false);
+
+  
+const fetchProducts = () => {
+  Get(ENDPOINTS.ALL_PRODUCTS, false, "")
+    .then((res) => {
+      if (res?.data?.success) {
+        // Dispatch an action to set products in the Redux store
+        dispatch(setProducts(res?.data?.data));
+      } else {
+        console.error("Products Api Fetched But Success Is False");
+      }
+    })
+    .catch((error) => {
+      console.log("error while fetching all products ");
+    });
+};
+
+useEffect(() => {
+  fetchProducts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setCustomerInfo({ ...customerInfo, [name]: value });
   };
 
-
-  // console.log(cartItems)
-
   const handleRemoveFromCart = (productId) => {
-    removeFromCart(productId);
-    toast.error('Item removed from cart.');
+    dispatch(removeFromCart(productId));
+    toast.error("Item removed from cart.");
   };
 
   const calculateTotal = () => {
-    return cartItems?.reduce((total, item) => total + item?.price, 0).toFixed(2);
+    return cartItems
+      ?.reduce((total, item) => total + parseInt(item?.price, 10), 0);
   };
 
   const handleCheckout = () => {
     // Check if customer information is provided
     if (customerInfo?.name && customerInfo?.email && customerInfo?.address) {
-      // Implement checkout logic (e.g., send order to server, redirect to a checkout page)
-      // You can add more checkout-related functionality here
-      toast.success("Checkout completed!");
+      // Dispatch an action to clear the cart
+      dispatch(clearCart());
+      setShowModal(true);
+      setIsPurchase(true);
     } else {
       toast.error("Please provide all required information.");
     }
   };
 
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setIsPurchase(false);
+  };
+
+  const handleButtonClick = () => {
+    setShowModal(false);
+    setIsPurchase(false);
+  };
 
   return (
     <>
       <div>
         <h2 className="text-center my-4">Shopping Cart</h2>
 
-        {/* Display Cart Items */}
         {cartItems?.length === 0 ? (
           <>
             <div className="container text-center">No Item in Cart</div>
@@ -65,7 +106,7 @@ const Purchase = (props) => {
                   {cartItems?.map((item) => (
                     <tr key={item?.id}>
                       <td>{item?.name}</td>
-                      <td>{item?.price?.toFixed(2)}</td>
+                      <td>{item?.price}</td>
                       <td>
                         <button
                           className="btn btn-danger"
@@ -125,7 +166,11 @@ const Purchase = (props) => {
                   variant="success"
                   className="mt-3"
                   onClick={handleCheckout}
-                  disabled={!customerInfo.name || !customerInfo.email || !customerInfo.address}
+                  disabled={
+                    !customerInfo.name ||
+                    !customerInfo.email ||
+                    !customerInfo.address
+                  }
                 >
                   Proceed to Checkout
                 </Button>
@@ -133,7 +178,13 @@ const Purchase = (props) => {
             </div>
           </>
         )}
-
+        {showModal && (
+          <ModalComponent
+            onClose={handleCloseModal}
+            onButtonClick={handleButtonClick}
+            isPurchase={isPurchase}
+          />
+        )}
         <ToastContainer />
       </div>
     </>
